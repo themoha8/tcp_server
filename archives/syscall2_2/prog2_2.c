@@ -16,11 +16,11 @@ uint64 errno;
 //         return;
 
 //     if (num == 0) {
-//     	*buf = '0';
-//     	buf++;
-//     	*buf = '\0';
-//     	return;
-//   	}
+//      *buf = '0';
+//      buf++;
+//      *buf = '\0';
+//      return;
+//      }
 
 //     if (num < 0 && size > 0) {
 //         *buf++ = '-';
@@ -74,6 +74,6 @@ void _start()
 	// retv[l] = '\n';
 	// retv[l+1] = '\0';
 	// syscall3(1, 1, (uintptr)retv, l+1);
-	syscall3(1, 1, (uintptr)msg, 17);
+	syscall3(1, 1, (uintptr) msg, 17);
 	syscall3(60, 0, 0, 0);
 }

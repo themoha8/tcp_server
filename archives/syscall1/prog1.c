@@ -6,52 +6,52 @@ static char retv[64];
 
 void itoa(int num, char *buf, int size)
 {
-    char *start, *end;
+	char *start, *end;
 
-    if (size > 0)
-        /* '\0' */
-        size--;
-    else
-        return;
+	if (size > 0)
+		/* '\0' */
+		size--;
+	else
+		return;
 
-    if (num == 0) {
-    	*buf = '0';
-    	buf++;
-    	*buf = '\0';
-    	return;
-  	}
+	if (num == 0) {
+		*buf = '0';
+		buf++;
+		*buf = '\0';
+		return;
+	}
 
-    if (num < 0 && size > 0) {
-        *buf++ = '-';
-        num = -num;
-        size--;
-    }
+	if (num < 0 && size > 0) {
+		*buf++ = '-';
+		num = -num;
+		size--;
+	}
 
-    start = buf;
+	start = buf;
 
-    while (num > 0 && size > 0) {
-        *buf++ = (num % 10) + '0';
-        num /= 10;
-        size--;
-    }
+	while (num > 0 && size > 0) {
+		*buf++ = (num % 10) + '0';
+		num /= 10;
+		size--;
+	}
 
-    *buf = '\0';
-    end = buf-1;
-    while (start < end) {
-        char temp = *start;
-        *start++ = *end;
-        *end-- = temp;
-    }
+	*buf = '\0';
+	end = buf - 1;
+	while (start < end) {
+		char temp = *start;
+		*start++ = *end;
+		*end-- = temp;
+	}
 }
 
 int mystrlen(const char *s)
 {
-    int i = 0;
+	int i = 0;
 
-    while (s[i] != '\0')
-        i++;
+	while (s[i] != '\0')
+		i++;
 
-    return i;
+	return i;
 }
 
 void _start()
@@ -63,17 +63,17 @@ void _start()
 	itoa(res.r1, retv, 64);
 	l = mystrlen(retv);
 	retv[l] = '\n';
-	retv[l+1] = '\0';
-	sys_write(1, retv, l+1);
+	retv[l + 1] = '\0';
+	sys_write(1, retv, l + 1);
 	itoa(res.r2, retv, 64);
 	l = mystrlen(retv);
 	retv[l] = '\n';
-	retv[l+1] = '\0';
-	sys_write(1, retv, l+1);
+	retv[l + 1] = '\0';
+	sys_write(1, retv, l + 1);
 	itoa(res.errno, retv, 64);
 	l = mystrlen(retv);
 	retv[l] = '\n';
-	retv[l+1] = '\0';
-	sys_write(1, retv, l+1);
+	retv[l + 1] = '\0';
+	sys_write(1, retv, l + 1);
 	sys_exit(60);
 }

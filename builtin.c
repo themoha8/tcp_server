@@ -1,6 +1,6 @@
-#include "u.h" /* data types */
-#include "error.h" /* assert */
-#include "syscall.h" /* sys_write */
+#include "u.h"					/* data types */
+#include "error.h"				/* assert */
+#include "syscall.h"			/* sys_write */
 #include "builtin.h"
 
 typedef int word;
@@ -272,4 +272,3 @@ void panic(const char *msg)
 	ret.base = allocate(mem);
 	
 }*/
-

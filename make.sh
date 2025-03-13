@@ -93,9 +93,21 @@ case $1 in
 			# -header-filter - what header files to analyze.
 			CHECKS='-*,clang-analyzer-*,-clang-analyzer-cplusplus*,performance*'
 			echo -n $CFLAGS $LDFLAGS | sed 's/ /\n/g' > compile_flags.txt
-			run clang-tidy -warnings-as-errors=$CHECKS --header-filter=.* --system-headers *.c
+			if [ "$#" -gt 1 ]; then
+				run clang-tidy -warnings-as-errors=$CHECKS --header-filter=.* --system-headers ./tests/${2}.c
+			else
+				run clang-tidy -warnings-as-errors=$CHECKS --header-filter=.* --system-headers *.c
+			fi
 			rm -f compile_flags.txt
 		fi
+			;;
+	test)
+			if [ "$#" -gt 1 ]; then
+				run cc -o ./tests/$2.out -O2 -mavx2 $CFLAGS $LDFLAGS ./tests/${2}.c $SRC
+			else
+				echo "Type a program name (without .c)"
+				exit 1
+			fi
 			;;
 esac
 

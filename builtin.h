@@ -15,11 +15,11 @@ typedef struct slice_t {
 /*typedef struct ferror_t *ferror;*/
 
 typedef struct ferror_t {
-	string (*handle_error)(struct ferror_t *);
+	string(*handle_error) (struct ferror_t *);
 } ferror;
 
 typedef struct error_t {
-	string (*handle_error)(ferror*);
+	string(*handle_error) (ferror *);
 	string message;
 	int code;
 } error;

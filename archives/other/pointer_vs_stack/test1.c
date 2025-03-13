@@ -29,28 +29,24 @@ typedef struct slice_t {
 	uint64 cap;
 } slice;
 
-slice slice_left(slice s, uint64 lbytes)
+void slice_left(slice * s, uint64 lbytes)
 {
-	slice ret;
-
-	ret.base = s.base + lbytes;
-	ret.len = s.len - lbytes;
-	ret.cap = s.cap - lbytes;
-
-	return ret;
+	s->base += +lbytes;
+	s->len = s->len - lbytes;
+	s->cap = s->cap - lbytes;
 }
 
 int main()
 {
 	char msg[] = "Hello\n";
-	slice s, ret;
+	slice s;
 
 	s.base = msg;
 	s.len = sizeof(msg);
 	s.cap = sizeof(msg);
 
 	sys_write(1, msg, sizeof(msg));
-	ret = slice_left(s, 2);
-	sys_write(1, ret.base, ret.len);
+	slice_left(&s, 2);
+	sys_write(1, s.base, s.len);
 	return 0;
 }

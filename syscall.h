@@ -5,7 +5,8 @@ extern int errno;
 
 int64 sys_read(uint32 fd, char *buf, uint64 count);
 int64 sys_write(uint32 fd, const char *buf, uint64 count);
-void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags, uintptr fd, uintptr offset );
+void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags,
+			   uintptr fd, uintptr offset);
 /*int64 sys_munmap(uintptr addr, uint64 len);*/
 void sys_exit(int error_code);
 /*int64 sys_write(int fd, const void *buf, uint64 nbytes);
