@@ -1,0 +1,6 @@
+syscall tables:
+http://main.lv/notes/syscalls.md
+https://jameshfisher.com/2018/02/19/how-to-syscall-in-c/
+
+embeded libc
+https://github.com/embeddedartistry/libc/tree/master
