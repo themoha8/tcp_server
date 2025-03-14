@@ -3,8 +3,9 @@
 
 int errno;
 
-enum { s_read = 0x0, s_write = 0x1, s_mmap = 0x9, s_munmap = 0xb, s_exit =
-		0x3c };
+enum { s_read = 0x0, s_write = 0x1, s_mmap = 0x9,
+	s_munmap = 0xb, s_exit = 0x3c
+};
 
 uintptr syscall6(int trap, uintptr a1, uintptr a2, uintptr a3, uintptr a4,
 				 uintptr a5, uintptr a6)

@@ -103,9 +103,13 @@ case $1 in
 			;;
 	test)
 			if [ "$#" -gt 1 ]; then
-				run cc -o ./tests/$2.out -O2 -mavx2 $CFLAGS $LDFLAGS ./tests/${2}.c $SRC
+				if [ "$2" == "clean" ]; then
+					run rm -f ./tests/*.out
+				else
+					run cc -o ./tests/$2.out -O2 -mavx2 $CFLAGS $LDFLAGS ./tests/${2}.c $SRC
+				fi
 			else
-				echo "Type a program name (without .c)"
+				echo "Type a program name (<name_test> without .c) or clean for deleting *.out files"
 				exit 1
 			fi
 			;;

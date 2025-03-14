@@ -5,7 +5,7 @@
 
 enum { stdin = 0, stdout = 1, stderr = 2 };
 enum { map_private = 0x2, map_anonymous = 0x20, map_fixed = 0x10,
-	prot_read = 0x1, prot_write = 0x2, prot_exec = 0x4
+	prot_read = 0x1, prot_write = 0x2
 };
 
 typedef char int8;
