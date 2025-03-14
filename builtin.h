@@ -41,7 +41,10 @@ typedef struct error_t {
 #define new_object(type) allocate(sizeof(type))
 
 uint64 copy(slice dst, slice src);
-/*slice make_slice(uint64 type_size, uint64 len, uint64 cap);*/
+slice make_slice(uint64 type_size, uint64 len, uint64 cap);
+slice grow_slice(void *old_ptr, uint64 new_len, uint64 old_cap, uint64 num,
+				 uint64 type_size);
+string sl_to_str_new_base(slice s);
 
 void panic(const char *msg);
 

@@ -1,10 +1,14 @@
 #include "u.h"					/* data types */
 #include "error.h"				/* assert */
 #include "syscall.h"			/* sys_write */
+#include "arena.h"				/* allocate */
 #include "builtin.h"
 
 typedef int word;
-enum { max_alloc = 1 << 31, wsize = sizeof(word), wmask = wsize - 1 };
+
+static const uint64 max_alloc = 1 << 31;
+
+enum { wsize = sizeof(word), wmask = wsize - 1 };
 
 void *memcpy(void *dst0, const void *src0, uint64 length)
 {
@@ -257,7 +261,7 @@ void panic(const char *msg)
 	__asm__ __volatile__("int3");
 }
 
-/*slice make_slice(uint64 type_size, uint64 len, uint64 cap)
+slice make_slice(uint64 type_size, uint64 len, uint64 cap)
 {
 	uint64 mem = type_size * cap;
 	slice ret;
@@ -270,5 +274,87 @@ void panic(const char *msg)
 	}
 
 	ret.base = allocate(mem);
-	
-}*/
+	ret.len = len;
+	ret.cap = cap;
+
+	return ret;
+}
+
+static uint64 new_slice_cap(uint64 new_len, uint64 old_cap)
+{
+	uint64 new_cap = old_cap;
+	uint64 threshold = 256;
+	uint64 double_cap = new_cap + new_cap;
+
+	if (new_len > double_cap)
+		return new_len;
+
+	if (old_cap < threshold)
+		return double_cap;
+
+	while (1) {
+		uint64 old_new_cap = new_cap;
+
+		/* Transition from growing 2x for small slices
+		 * to growing 1.25x for large slices. This formula
+		 * gives a smooth-ish transition between the two.
+		 */
+		new_cap += (new_cap + 3 * threshold) >> 2;
+
+		/* check overflow */
+		if (new_cap < old_new_cap)
+			return new_len;
+
+		if (new_cap >= new_len)
+			return new_cap;
+	}
+}
+
+static uint64 round_up_size(uint64 size)
+{
+	int page_size = 1 << 12;
+	return size + (size & (page_size - 1));
+}
+
+slice grow_slice(void *old_ptr, uint64 new_len, uint64 old_cap, uint64 num,
+				 uint64 type_size)
+{
+	uint64 new_cap = new_slice_cap(new_len, old_cap);
+	uint64 old_len = new_len - num;
+	uintptr len_mem, cap_mem;
+	void *p;
+	slice ret;
+
+	len_mem = old_len * type_size;
+	cap_mem = new_cap * type_size;
+	cap_mem = round_up_size(cap_mem);
+	new_cap = cap_mem / type_size;
+	cap_mem = new_cap * type_size;
+
+	if (cap_mem > max_alloc)
+		panic("grow_slice: len out of range\n");
+
+	p = allocate(cap_mem);
+	memmove(p, old_ptr, len_mem);
+
+	ret.base = p;
+	ret.len = new_len;
+	ret.cap = new_cap;
+
+	return ret;
+}
+
+string sl_to_str_new_base(slice s)
+{
+	byte *mem;
+	string ret;
+
+	mem = allocate(s.len);
+	assert(mem != nil);
+
+	ret.base = mem;
+	ret.len = s.len;
+
+	copy(get_slice_from_string(ret), s);
+	return ret;
+}
