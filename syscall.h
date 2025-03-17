@@ -3,6 +3,12 @@
 
 extern int errno;
 
+enum { map_private = 0x2, map_anonymous = 0x20, map_fixed = 0x10,
+	prot_read = 0x1, prot_write = 0x2
+};
+
+enum { stdin = 0, stdout = 1, stderr = 2 };
+
 int64 sys_read(uint32 fd, char *buf, uint64 count);
 int64 sys_write(uint32 fd, const char *buf, uint64 count);
 void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags,

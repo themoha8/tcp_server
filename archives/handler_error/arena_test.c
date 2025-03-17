@@ -1,0 +1,47 @@
+#include "u.h"
+#include "builtin.h"
+#include "error.h"
+#include "arena.h"
+#include "syscall.h"
+
+const char *poem =
+	"\nIn the realm of code where logic reigns, \n"
+	"A language born from simple chains, \n"
+	"With curly braces and semicolons, \n"
+	"The art of C, where thought is woven.\n"
+	"Variables dance in memory's space, \n"
+	"Integers, floats, each finds its place, \n"
+	"Arrays align in a structured array, \n"
+	"While pointers guide the data's way.\n"
+	"Functions call with a rhythmic grace, \n"
+	"Parameters passed in a swift embrace, \n"
+	"Return values whisper, 'I’m here to stay,' \n"
+	"In the heart of the program, they find their way.\n\nAuthor: anon";
+
+void _start(void)
+{
+	int i;
+	char *tmp, *p = (char *) allocate(1024);
+
+	if (p == nil) {
+		sys_write(stderr, "sys_mmap error\n", 16, nil);
+		sys_exit(1);
+	}
+
+	tmp = p;
+	for (i = 0; poem[i] != '\0'; i++) {
+		*tmp = poem[i];
+		tmp++;
+	}
+	p[i] = '\n';
+	p[i + 1] = '\n';
+	sys_write(1, p, i + 2, nil);
+
+/*	p2 = (char *) allocate(64);
+	for (i = 0; i < 10; i++) {
+		p2[i] = i + '0';
+	}
+	p2[i] = '\n';
+	sys_write(1, p2, i + 1, nil);*/
+	sys_exit(0);
+}
