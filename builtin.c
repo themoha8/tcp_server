@@ -149,7 +149,7 @@ slice unsafe_slice(const void *buf, uint64 len)
 {
 	slice s;
 
-	s.base = (void *)buf;
+	s.base = (void *) buf;
 	s.len = s.cap = len;
 
 	return s;
@@ -202,11 +202,11 @@ string get_string_from_slice(slice s)
 	return ret;
 }
 
-string unsafe_string(const byte *buf, uint64 len)
+string unsafe_string(const byte * buf, uint64 len)
 {
 	string s;
 
-	s.base = (byte *)buf;
+	s.base = (byte *) buf;
 	s.len = len;
 
 	return s;
