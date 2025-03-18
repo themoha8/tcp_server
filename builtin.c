@@ -129,6 +129,10 @@ uint64 c_string_length(const char *s)
 {
 	int i = 0;
 
+	if (s == 0) {
+		return i;
+	}
+
 	while (s[i] != '\0')
 		i++;
 
@@ -272,9 +276,9 @@ uint64 put_string_in_slice(slice sl, string s)
 	return l;
 }
 
-uint64 put_int_in_slice(slice s, int x)
+uint64 put_int_in_slice(slice s, int64 x)
 {
-	int n_digits = 0, rx = 0, i = 0;
+	int64 n_digits = 0, rx = 0, i = 0;
 	char *buf = s.base;
 
 	if (x == 0) {

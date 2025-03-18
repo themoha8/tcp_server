@@ -4,7 +4,7 @@
 int errno;
 
 enum { s_read = 0x0, s_write = 0x1, s_mmap = 0x9,
-	s_munmap = 0xb, s_exit = 0x3c
+	s_munmap = 0xb, s_exit = 0x3c, s_clock_gettime = 0xe4
 };
 
 uintptr syscall6(int trap, uintptr a1, uintptr a2, uintptr a3, uintptr a4,
@@ -74,4 +74,10 @@ void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags,
 void sys_exit(int error_code)
 {
 	syscall3(s_exit, error_code, 0, 0);
+}
+
+int64 sys_clock_gettime(int32 which_clock, struct timespec *tp)
+{
+	uintptr r = syscall3(s_clock_gettime, which_clock, (uintptr) tp, 0);
+	return r;
 }

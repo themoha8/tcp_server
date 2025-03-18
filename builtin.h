@@ -58,7 +58,7 @@ uint64 c_string_length(const char *s);
 
 uint64 put_c_string_in_slice(slice s, char *c_str);
 uint64 put_string_in_slice(slice sl, string s);
-uint64 put_int_in_slice(slice s, int x);
+uint64 put_int_in_slice(slice s, int64 x);
 
 void *memcpy(void *dst, const void *src, uint64 length);
 void *memmove(void *dst, const void *src, uint64 length);
