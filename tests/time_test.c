@@ -17,12 +17,13 @@ void _start(void)
 	}
 
 	tm_time = time_to_tm(tp.tv_sec);
-	s = make(char, 256, 256);
+	s = make(char, 512, 512);
 
-	len = put_c_string_in_slice(s, "unix time: ");
+	len = put_c_string_in_slice(s, "Unix time: ");
 	len += put_int_in_slice(slice_left(s, len), tp.tv_sec);
 
-	len += put_c_string_in_slice(slice_left(s, len), "\ntm_sec: ");
+	len += put_c_string_in_slice(slice_left(s, len), "\n\nStruct tm: \n");
+	len += put_c_string_in_slice(slice_left(s, len), "tm_sec: ");
 	len += put_int_in_slice(slice_left(s, len), tm_time.tm_sec);
 
 	len += put_c_string_in_slice(slice_left(s, len), "\ntm_min: ");
@@ -55,6 +56,14 @@ void _start(void)
 	len += put_c_string_in_slice(slice_left(s, len), "\ntm_zone: ");
 	len += put_c_string_in_slice(slice_left(s, len), tm_time.tm_zone);
 
+	len += put_c_string_in_slice(slice_left(s, len), "\n\n");
+
+	len += put_c_string_in_slice(slice_left(s, len),
+							  "Time in RF822 format: ");
+	len += put_tm_rfc822_in_slice(slice_left(s, len), &tm_time);
+	len += put_c_string_in_slice(slice_left(s, len),
+							  "\n\nTime in tm2 format: ");
+	len += put_tm_in_slice(slice_left(s, len), &tm_time);
 	len += put_c_string_in_slice(slice_left(s, len), "\n");
 	print_string(stdout, get_string_from_slice(slice_right(s, len)));
 	sys_exit(0);

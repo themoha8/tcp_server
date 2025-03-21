@@ -1,4 +1,5 @@
 #include "u.h"
+#include "builtin.h"
 #include "time.h"
 
 static const int days_since_jan_1st[][13] = {
@@ -60,7 +61,7 @@ struct tm time_to_tm(int64 t)
 
 	/* Remove multiples of years (incl. 0 leap days), can't be more than 3
 	 * (because multiples of 4 years (incl. leap days) have been removed).
-	 * 365 days *60 secs * 60 mins * 24 hours
+	 * 365 days * 60 secs * 60 mins * 24 hours
 	 */
 	annuals = sec / 31536000;
 	if (annuals > 3) {
@@ -69,8 +70,7 @@ struct tm time_to_tm(int64 t)
 	sec -= annuals * 31536000;
 
 	/* Calculate the year and find out if it's leap. */
-	year =
-		1601 + quadricentennials * 400 + centennials * 100 +
+	year = 1601 + quadricentennials * 400 + centennials * 100 +
 		quadrennials * 4 + annuals;
 	leap = (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
 
@@ -105,4 +105,177 @@ struct tm time_to_tm(int64 t)
 	tm_time.tm_zone = nil;
 
 	return tm_time;
+}
+
+/*struct tm time_to_tm2(int64 t)
+{
+	int64 quadricentennials, centennials, quadrennials, annuals;
+	int64 yday, mday, wday;
+	int64 year, month, leap;
+	int64 hour, min, sec;
+	struct tm tm_time;
+
+	t += 3 * 60 * 60;
+
+	sec = t;
+
+	wday = (sec / 86400 + 4) % 7;
+
+	quadricentennials = sec / 12622780800;
+	sec %= 12622780800;
+
+	centennials = sec / 3155673600;
+	if (centennials > 3) {
+		centennials = 3;
+	}
+	sec -= centennials * 3155673600;
+
+	quadrennials = sec / 126230400;
+	if (quadrennials > 24) {
+		quadrennials = 24;
+	}
+	sec -= quadrennials * 126230400;
+
+	annuals = sec / 31536000;
+	if (annuals > 3) {
+		annuals = 3;
+	}
+	sec -= annuals * 31536000;
+
+	year = 1970 + quadricentennials * 400 + centennials * 100 + quadrennials * 4 + annuals;
+	leap = (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
+
+	yday = sec / 86400;*/
+	/* substact current day */
+/*	if (sec % 86400 != 0)
+		yday -= 1;
+
+	sec %= 86400;
+	hour = sec / 3600;
+	sec %= 3600;
+	min = sec / 60;
+	sec %= 60;
+
+	for (month = 1, mday = 1; month <= 12; month++) {
+		if (yday < days_since_jan_1st[leap][month]) {
+			mday += yday - days_since_jan_1st[leap][month - 1];
+			break;
+		}
+	}
+
+	tm_time.tm_sec = sec;
+	tm_time.tm_min = min;
+	tm_time.tm_hour = hour;
+	tm_time.tm_mday = mday;
+	tm_time.tm_mon = month - 1;
+	tm_time.tm_year = year - 1900;
+	tm_time.tm_wday = wday;
+	tm_time.tm_yday = yday;
+	tm_time.tm_isdst = -1;
+	tm_time.tm_gmtoff = 3 * 60 * 60;
+	tm_time.tm_zone = nil;
+
+	return tm_time;
+}
+*/
+
+static const char *wdays[] =
+	{ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+static const char *months[] =
+	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+"Nov", "Dec" };
+
+/* Sat, 04 Nov 2023 17:47:03 +0300 */
+uint64 put_tm_rfc822_in_slice(slice s, const struct tm *tm)
+{
+	char *buf = s.base;
+	int n = 0;
+
+	n += put_c_string_in_slice(s, wdays[tm->tm_wday]);
+	buf[n++] = ',';
+	buf[n++] = ' ';
+
+	if (tm->tm_mday < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_mday);
+	buf[n++] = ' ';
+
+	n += put_c_string_in_slice(slice_left(s, n), months[tm->tm_mon]);
+	buf[n++] = ' ';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_year + 1900);
+	buf[n++] = ' ';
+
+	if (tm->tm_hour < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_hour);
+	buf[n++] = ':';
+
+	if (tm->tm_min < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_min);
+	buf[n++] = ':';
+
+	if (tm->tm_sec < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_sec);
+	buf[n++] = ' ';
+
+	buf[n++] = '+';
+	buf[n++] = '0';
+	buf[n++] = '3';
+	buf[n++] = '0';
+	buf[n++] = '0';
+
+	return n;
+}
+
+/* 08.10.2023 15:13:54 MSK */
+uint64 put_tm_in_slice(slice s, struct tm * tm)
+{
+	char *buf = s.base;
+	int n = 0;
+
+	if (tm->tm_mday < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_mday);
+	buf[n++] = '.';
+
+	if (tm->tm_mon + 1 < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_mon + 1);
+	buf[n++] = '.';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_year + 1900);
+	buf[n++] = ' ';
+
+	if (tm->tm_hour < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_hour);
+	buf[n++] = ':';
+
+	if (tm->tm_min < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_min);
+	buf[n++] = ':';
+
+	if (tm->tm_sec < 10)
+		buf[n++] = '0';
+
+	n += put_int_in_slice(slice_left(s, n), tm->tm_sec);
+	buf[n++] = ' ';
+
+	buf[n++] = 'M';
+	buf[n++] = 'S';
+	buf[n++] = 'K';
+
+	return n;
 }

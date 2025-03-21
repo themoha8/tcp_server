@@ -21,17 +21,29 @@ void assert_fail(char *expr, char *file, uint64 line);
 		} \
 	} while (0)
 
-/*#define append(vs, v) \
+/*#define append_str(vs, v) \
+	do { \
+		uint64 new_len = (vs).len + sizeof(v); \
+		if (new_len > (vs).cap) { \
+			(vs) = grow_slice((vs), new_len, sizeof(char)); \
+		} \
+		memcpy((char *)(vs).base + (vs).len*sizeof(v), &(v), sizeof(v)); \
+		(vs).len += sizeof(v); \
+	} while(0)*/
+
+#define append_str(vs, v) \
 	do { \
 		int i, num = 1; \
 		if ((vs).len + num > (vs).cap) { \
-			(vs) = grow_slice((vs).base, (vs).len + num, (vs).cap, num, sizeof(v)); \
+			(vs) = grow_slice((vs), num, sizeof(v)); \
 		} \
 		for (i = 0; i < num; ++i) { \
 			memcpy((char *)(vs).base + (vs).len*sizeof(v), &(v), sizeof(v)); \
 			(vs).len += 1; \
 		} \
-	} while(0)*/
+	} while(0)
+
+void *allocate(uint64 size);
 
 #define make(type, len, cap) make_slice(sizeof(type), len, cap)
 #define new(type) allocate(sizeof(type))
@@ -56,7 +68,7 @@ string string_right(string s, uint64 r_bytes);
 string string_left_right(string s, uint64 l_bytes, uint64 r_bytes);
 uint64 c_string_length(const char *s);
 
-uint64 put_c_string_in_slice(slice s, char *c_str);
+uint64 put_c_string_in_slice(slice s, const char *c_str);
 uint64 put_string_in_slice(slice sl, string s);
 uint64 put_int_in_slice(slice s, int64 x);
 

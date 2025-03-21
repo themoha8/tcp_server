@@ -21,5 +21,7 @@ struct timespec {
 };
 
 struct tm time_to_tm(int64 t);
+uint64 put_tm_rfc822_in_slice(slice s, const struct tm *t);
+uint64 put_tm_in_slice(slice s, struct tm *tm);
 
 #endif

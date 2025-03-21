@@ -63,6 +63,9 @@ case $1 in
 	release)
 		run cc -o $PROJECT -O2 -mavx2 $CFLAGS $LDFLAGS $SRC
 		;;
+	macro)
+		run cc -E $LDFLAGS $CFLAGS $SRC
+		;;
 	disas | disasm)
 		#for file in $SRC; do
 			#run cc -o $file.disas -O0 -S $CFLAGS $LDFLAGS $file

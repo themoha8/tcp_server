@@ -261,7 +261,7 @@ uint64 copy(slice dst, slice src)
 	return l;
 }
 
-uint64 put_c_string_in_slice(slice s, char *c_str)
+uint64 put_c_string_in_slice(slice s, const char *c_str)
 {
 	return put_string_in_slice(s, unsafe_c_string(c_str));
 }
