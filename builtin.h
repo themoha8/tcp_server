@@ -43,17 +43,19 @@ void assert_fail(char *expr, char *file, uint64 line);
 		} \
 	} while(0)
 
-void *allocate(uint64 size);
+#define	va_start(ap, last) __builtin_va_start((ap), (last))
+#define va_arg(v, l) __builtin_va_arg(v, l)
+#define va_end(v) __builtin_va_end(v)
+
+typedef __builtin_va_list __va_list;
+typedef __va_list va_list;
 
 #define make(type, len, cap) make_slice(sizeof(type), len, cap)
-#define new(type) allocate(sizeof(type))
 
 uint64 copy(slice dst, slice src);
 slice make_slice(uint64 type_size, uint64 len, uint64 cap);
 slice grow_slice(slice old_s, uint64 new_len, uint64 type_size);
 string sl_to_str_new_base(slice s);
-
-void panic(const char *msg);
 
 slice get_slice_from_string(string s);
 slice unsafe_slice(const void *buf, uint64 len);
@@ -67,13 +69,19 @@ string string_left(string s, uint64 l_bytes);
 string string_right(string s, uint64 r_bytes);
 string string_left_right(string s, uint64 l_bytes, uint64 r_bytes);
 uint64 c_string_length(const char *s);
+int c_strncpy(char *dest, const char *src, int64 len);
+
+void print_string(int stream, string s);
+int fmt_fprint(int stream, const char *fmt, ...);
 
 uint64 put_c_string_in_slice(slice s, const char *c_str);
 uint64 put_string_in_slice(slice sl, string s);
 uint64 put_int_in_slice(slice s, int64 x);
+uint64 put_c_string_in_slice2(slice s, const char *c_str, uint64 len);
 
 void *memcpy(void *dst, const void *src, uint64 length);
 void *memmove(void *dst, const void *src, uint64 length);
 int memequal(const void *dst, const void *src, uint64 length);
 
+void panic(const char *msg);
 #endif

@@ -2,13 +2,12 @@
 #include "syscall.h"			/* sys_write */
 #include "arena.h"				/* allocate */
 #include "builtin.h"
-#include "print.h"
 
 typedef int word;
 
 static const uint64 max_alloc = 1 << 31;
 
-enum { wsize = sizeof(word), wmask = wsize - 1 };
+enum { wsize = sizeof(word), wmask = wsize - 1, max_buf = 1024 };
 
 void assert_fail(char *expr, char *file, uint64 line)
 {
@@ -266,6 +265,11 @@ uint64 put_c_string_in_slice(slice s, const char *c_str)
 	return put_string_in_slice(s, unsafe_c_string(c_str));
 }
 
+uint64 put_c_string_in_slice2(slice s, const char *c_str, uint64 len)
+{
+	return put_string_in_slice(s, unsafe_string((byte *) c_str, len));
+}
+
 uint64 put_string_in_slice(slice sl, string s)
 {
 	uint64 l;
@@ -278,8 +282,12 @@ uint64 put_string_in_slice(slice sl, string s)
 
 uint64 put_int_in_slice(slice s, int64 x)
 {
-	int64 n_digits = 0, rx = 0, i = 0;
+	uint64 n_digits = 0, rx = 0, i = 0;
 	char *buf = s.base;
+	uint64 bound = s.cap;
+
+	if (bound == 0)
+		return 0;
 
 	if (x == 0) {
 		buf[0] = '0';
@@ -298,7 +306,7 @@ uint64 put_int_in_slice(slice s, int64 x)
 		n_digits++;
 	}
 
-	while (n_digits > 0) {
+	while (n_digits > 0 && bound - i != 0) {
 		buf[i++] = (rx % 10) + '0';
 		rx /= 10;
 		n_digits--;
@@ -328,7 +336,7 @@ int memequal(const void *dst, const void *src, uint64 length)
 
 void panic(const char *msg)
 {
-	sys_write(stderr, msg, c_string_length(msg));
+	sys_write(stderr, msg, c_string_length(msg), nil);
 	/* breakpoint for gdb */
 	__asm__ __volatile__("int3");
 }
@@ -346,8 +354,6 @@ slice make_slice(uint64 type_size, uint64 len, uint64 cap)
 	}
 
 	ret.base = allocate(mem);
-	if (ret.base == nil)
-		panic("builtin.c (make_slice): allocate error\n");
 	ret.len = len;
 	ret.cap = cap;
 
@@ -419,4 +425,59 @@ string sl_to_str_new_base(slice s)
 
 	copy(get_slice_from_string(ret), s);
 	return ret;
+}
+
+int c_strncpy(char *dest, const char *src, int64 len)
+{
+	int i;
+
+	for (i = 0; i < len && src[i] != '\0'; i++)
+		dest[i] = src[i];
+
+	return i;
+}
+
+void print_string(int stream, string s)
+{
+	sys_write(stream, (const char *) s.base, s.len, nil);
+}
+
+int fmt_fprint(int stream, const char *fmt, ...)
+{
+	va_list args;
+	int num, j = 0;
+	char buf[max_buf];
+	char *s;
+
+	va_start(args, fmt);
+
+	while (*fmt != '\0' && max_buf > j) {
+		if (*fmt == '%') {
+			fmt++;
+			switch (*fmt) {
+			case 'c':
+				buf[j++] = va_arg(args, int);
+				break;
+			case 's':
+				s = va_arg(args, char *);
+				j += c_strncpy(buf + j, s, max_buf - j);
+				break;
+			case 'd':
+				num = va_arg(args, int);
+				j += put_int_in_slice(unsafe_slice(buf + j, max_buf - j),
+									  num);
+				break;
+			case '%':
+				buf[j++] = *fmt;
+				break;
+			}
+		} else {
+			buf[j++] = *fmt;
+		}
+		fmt++;
+	}
+
+	va_end(args);
+	sys_write(stream, buf, j, nil);
+	return j;
 }

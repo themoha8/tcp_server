@@ -1,7 +1,6 @@
 #include "u.h"
 #include "builtin.h"
 #include "arena.h"
-#include "print.h"
 #include "syscall.h"
 
 void _start(void)

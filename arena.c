@@ -1,5 +1,6 @@
-#include "u.h"
-#include "syscall.h"
+#include "u.h"					/* data types */
+#include "syscall.h"			/* mmap */
+#include "builtin.h"			/* fmt_fprint */
 #include "arena.h"
 
 typedef struct arena_t {
@@ -12,8 +13,9 @@ enum { page_size = 4096 };
 
 static arena global_arena;
 
-static int extend_arena_by(arena * a, uint64 size)
+static error *extend_arena_by(arena * a, uint64 size)
 {
+	error *err;
 	void *addr;
 	int flags;
 	size = ((size - 1) / page_size + 1) * page_size;
@@ -27,26 +29,31 @@ static int extend_arena_by(arena * a, uint64 size)
 	}
 
 	addr = sys_mmap((uintptr) addr, size, prot_read | prot_write,
-					map_private | map_anonymous | flags, -1, 0);
+					map_private | map_anonymous | flags, -1, 0, &err);
 
-	if (addr == nil)
-		return -1;
+	if (err != nil)
+		return err;
 
 	if (a->base == nil)
 		a->base = addr;
 
 	a->allocated += size;
 
-	return 0;
+	return nil;
 }
 
 static void *allocate_from(arena * a, uint64 size)
 {
+	error *err;
 	char *start;
 
 	if (a->in_use + size > a->allocated) {
-		if (extend_arena_by(a, size) == -1)
-			return nil;
+		err = extend_arena_by(a, size);
+		if (err != nil) {
+			fmt_fprint(stderr, "Failed to initialize new arena: %s\n",
+					   err->msg);
+			sys_exit(1);
+		}
 	}
 	start = (char *) a->base + a->in_use;
 	a->in_use += size;

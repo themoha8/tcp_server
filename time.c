@@ -1,5 +1,5 @@
-#include "u.h"
-#include "builtin.h"
+#include "u.h"					/* data types */
+#include "builtin.h"			/* put_c_string_in_slice */
 #include "time.h"
 
 static const int days_since_jan_1st[][13] = {
@@ -183,7 +183,8 @@ static const char *wdays[] =
 	{ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
 static const char *months[] =
 	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
-"Nov", "Dec" };
+	"Nov", "Dec"
+};
 
 /* Sat, 04 Nov 2023 17:47:03 +0300 */
 uint64 put_tm_rfc822_in_slice(slice s, const struct tm *tm)

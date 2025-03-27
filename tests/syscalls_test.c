@@ -20,12 +20,13 @@ void _start(void)
 {
 	int i, r;
 	char *tmp, *p;
+	error *err;
 
 	p = (char *) sys_mmap(0, 4096, prot_read | prot_write,
-						  map_private | map_anonymous, -1, 0);
+						  map_private | map_anonymous, -1, 0, &err);
 
-	if (p == nil) {
-		sys_write(stderr, "sys_mmap error\n", 16);
+	if (err != nil) {
+		fmt_fprint(stderr, "sys_mmap failed: %s\n", err->msg);
 		sys_exit(1);
 	}
 
@@ -37,9 +38,9 @@ void _start(void)
 
 	sys_write(1,
 			  "Please provide your first and last name, we will use them as the author of the poem: ",
-			  85);
-	r = sys_read(0, p + i, 4096 - i);
+			  85, nil);
+	r = sys_read(0, p + i, 4096 - i, nil);
 	p[i + r] = '\0';
-	sys_write(1, p, i + r);
+	sys_write(1, p, i + r, nil);
 	sys_exit(0);
 }

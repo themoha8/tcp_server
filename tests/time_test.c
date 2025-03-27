@@ -1,7 +1,6 @@
 #include "u.h"
 #include "builtin.h"
 #include "time.h"
-#include "print.h"
 #include "syscall.h"
 
 void _start(void)
@@ -10,9 +9,11 @@ void _start(void)
 	struct tm tm_time;
 	slice s;
 	uint64 len;
+	error *err;
 
-	if (sys_clock_gettime(clock_realtime, &tp)) {
-		sys_write(stderr, "sys_clock_gettime failed\n", 25);
+	err = sys_clock_gettime(clock_realtime, &tp);
+	if (err != nil) {
+		fmt_fprint(stderr, "sys_clock_gettime: %s\n", err->msg);
 		sys_exit(1);
 	}
 

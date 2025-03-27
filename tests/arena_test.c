@@ -1,7 +1,7 @@
 #include "u.h"
-#include "builtin.h"
 #include "arena.h"
 #include "syscall.h"
+#include "builtin.h"
 
 const char *poem =
 	"\nIn the realm of code where logic reigns, \n"
@@ -20,12 +20,9 @@ const char *poem =
 void _start(void)
 {
 	int i;
-	char *tmp, *p2, *p = (char *) allocate(1024);
+	char *tmp, *p2, *p;
 
-	if (p == nil) {
-		sys_write(stderr, "sys_mmap error\n", 16);
-		sys_exit(1);
-	}
+	p = (char *) allocate(1024);
 
 	tmp = p;
 	for (i = 0; poem[i] != '\0'; i++) {
@@ -34,13 +31,16 @@ void _start(void)
 	}
 	p[i] = '\n';
 	p[i + 1] = '\n';
-	sys_write(1, p, i + 2);
+
+	sys_write(1, p, i + 2, nil);
 
 	p2 = (char *) allocate(64);
+
 	for (i = 0; i < 10; i++) {
 		p2[i] = i + '0';
 	}
 	p2[i] = '\n';
-	sys_write(1, p2, i + 1);
+
+	sys_write(1, p2, i + 1, nil);
 	sys_exit(0);
 }

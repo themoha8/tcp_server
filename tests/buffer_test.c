@@ -1,7 +1,6 @@
 #include "u.h"
 #include "builtin.h"
 #include "syscall.h"
-#include "print.h"
 #include "buffer.h"
 
 const char *poem =
@@ -21,18 +20,23 @@ const char *poem =
 void _start(void)
 {
 	slice s;
-	circular_buffer cb = new_circular_buffer(4096);
-	uint64 len_poem = c_string_length(poem);
-	uint64 len;
+	uint64 len, len_poem;
+	circular_buffer cb;
+	error *err;
 
-	if (cb.buf == nil) {
-		sys_write(stderr, "New_circular_buffer failed\n", 27);
+	cb = new_circular_buffer(4096, &err);
+
+	if (err != nil) {
+		fmt_fprint(stderr, "new_circular_buffer: %s\n", err->msg);
 		sys_exit(1);
 	}
+
+	len_poem = c_string_length(poem);
+
 	memcpy(cb.buf, poem, len_poem);
 	produce(&cb, len_poem);
 
-	sys_write(stdout, cb.buf, len_poem);
+	sys_write(stdout, cb.buf, len_poem, nil);
 	consume(&cb, len_poem);
 
 	s = remaining_slice(&cb);

@@ -1,5 +1,5 @@
-#include "u.h"
-#include "builtin.h"
+#include "u.h"					/* data types */
+#include "builtin.h"			/* unsafe_c_string */
 #include "iovec.h"
 
 iovec iovec_from_byte_slice(slice s)

@@ -1,10 +1,11 @@
-#include "u.h"
-#include "builtin.h"
-#include "syscall.h"
+#include "u.h"					/* data types */
+#include "syscall.h"			/* mmap */
+#include "builtin.h"			/* unsafe_slice */
 #include "buffer.h"
 
-circular_buffer new_circular_buffer(uint64 size)
+circular_buffer new_circular_buffer(uint64 size, error ** err)
 {
+	error *er;
 	circular_buffer cb;
 	char *buf;
 
@@ -13,16 +14,18 @@ circular_buffer new_circular_buffer(uint64 size)
 	cb.buf = nil;
 	cb.len = cb.head = cb.tail = 0;
 
-	buf =
-		sys_mmap((uintptr) nil, 2 * size, prot_read | prot_write,
-				 map_anonymous | map_private, -1, 0);
-	if (buf == nil) {
+	buf = sys_mmap((uintptr) nil, 2 * size, prot_read | prot_write,
+				   map_anonymous | map_private, -1, 0, &er);
+
+	if (er != nil) {
+		*err = er;
 		return cb;
 	}
 
 	cb.buf = buf;
 	cb.len = 2 * size;
 
+	*err = nil;
 	return cb;
 }
 
