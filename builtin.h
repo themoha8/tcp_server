@@ -49,6 +49,8 @@ void assert_fail(char *expr, char *file, uint64 line);
 
 typedef __builtin_va_list __va_list;
 typedef __va_list va_list;
+void *allocate(uint64 size);
+#define new(type) allocate(sizeof(type))
 
 #define make(type, len, cap) make_slice(sizeof(type), len, cap)
 

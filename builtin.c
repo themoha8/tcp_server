@@ -1,7 +1,7 @@
 #include "u.h"					/* data types */
+#include "builtin.h"
 #include "syscall.h"			/* sys_write */
 #include "arena.h"				/* allocate */
-#include "builtin.h"
 
 typedef int word;
 
@@ -431,6 +431,9 @@ int c_strncpy(char *dest, const char *src, int64 len)
 {
 	int i;
 
+	if (!dest || !src || len <= 0)
+		return 0;
+
 	for (i = 0; i < len && src[i] != '\0'; i++)
 		dest[i] = src[i];
 
@@ -442,12 +445,46 @@ void print_string(int stream, string s)
 	sys_write(stream, (const char *) s.base, s.len, nil);
 }
 
+static int print_hex(slice s, uintptr num)
+{
+	uint64 rx = 0;
+	int i = 0, n_digits = 0, bound = s.cap;
+	char *buf = s.base;
+	const char *hex_digits = "0123456789abcdef";
+
+	if (bound == 0)
+		return 0;
+
+
+	buf[i++] = '0';
+
+	if (bound - i == 0)
+		return 1;
+
+	buf[i++] = 'x';
+
+	while (num > 0) {
+		rx = (16 * rx) + (num % 16);
+		num /= 16;
+		n_digits++;
+	}
+
+	while (n_digits > 0 && bound - i != 0) {
+		buf[i++] = hex_digits[(rx % 16)];
+		rx /= 16;
+		n_digits--;
+	}
+
+	return i;
+}
+
 int fmt_fprint(int stream, const char *fmt, ...)
 {
 	va_list args;
 	int num, j = 0;
 	char buf[max_buf];
 	char *s;
+	uintptr p;
 
 	va_start(args, fmt);
 
@@ -464,8 +501,11 @@ int fmt_fprint(int stream, const char *fmt, ...)
 				break;
 			case 'd':
 				num = va_arg(args, int);
-				j += put_int_in_slice(unsafe_slice(buf + j, max_buf - j),
-									  num);
+				j += put_int_in_slice(unsafe_slice(buf + j, max_buf - j), num);
+				break;
+			case 'p':
+				p = va_arg(args, uintptr);
+				j += print_hex(unsafe_slice(buf + j, max_buf - j), p);
 				break;
 			case '%':
 				buf[j++] = *fmt;

@@ -70,8 +70,7 @@ struct tm time_to_tm(int64 t)
 	sec -= annuals * 31536000;
 
 	/* Calculate the year and find out if it's leap. */
-	year = 1601 + quadricentennials * 400 + centennials * 100 +
-		quadrennials * 4 + annuals;
+	year = 1601 + quadricentennials * 400 + centennials * 100 + quadrennials * 4 + annuals;
 	leap = (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
 
 	/* Calculate the day of the year and the time. */
@@ -179,10 +178,9 @@ struct tm time_to_tm(int64 t)
 }
 */
 
-static const char *wdays[] =
-	{ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-static const char *months[] =
-	{ "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
+static const char *wdays[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
+static const char *months[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
 	"Nov", "Dec"
 };
 

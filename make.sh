@@ -78,10 +78,10 @@ case $1 in
 		if which indent > /dev/null; then
 			for file in $SRC; do
 				# -kr is Kernighan & Ritchie coding style, -ts4 is tabs.
-				run indent -kr -ts4 $file
+				run indent -kr -ts4 -l120 $file
 			done
 			for file in $HED; do
-				run indent -kr -ts4 $file
+				run indent -kr -ts4 -l120 $file
 			done
 			rm -f *.c~ *.h~
 		fi

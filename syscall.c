@@ -1,5 +1,5 @@
 #include "u.h"					/* data types */
-#include "arena.h"				/* allocate */
+#include "builtin.h"			/* slice */
 #include "syscall.h"
 
 typedef struct syscall_error_t {
@@ -15,51 +15,12 @@ enum { s_read = 0x0, s_write = 0x1, s_close = 0x3, s_mmap = 0x9,
 	s_fork = 0x39, s_epoll_create1 = 0x123
 };
 
-static const char *err_strings[] = {
-	"success",
-	"operation not permitted",
-	"no such file or directory",
-	"no such process",
-	"interrupted system call",
-	"I/O error",
-	"no such device or address",
-	"argument list too long",
-	"exec format error",
-	"bad file number",
-	"no child processes",
-	"try again",
-	"out of memory",
-	"permission denied",
-	"bad address",
-	"block device required",
-	"device or resource busy",
-	"file exists",
-	"cross-device link",
-	"no such device",
-	"not a directory",
-	"is a directory",
-	"invalid argument",
-	"file table overflow",
-	"too many open files",
-	"not a typewriter",
-	"text file busy",
-	"file too large",
-	"no space left on device",
-	"illegal seek",
-	"read-only file system",
-	"too many links",
-	"broken pipe",
-	"math argument out of domain of func",
-	"math result not representable"
-};
-
 /* In order to preserve the value of the rcx register, we specified rcx 
  * as clobbered registers and the compiler saves this register before 
  * executing the asm code. But since rcx is stored in r11, and r11 is also
  * overwritten by the syscall call, we additionally specify r11.
  */
-syscall_result syscall6(int trap, uintptr a1, uintptr a2, uintptr a3,
-						uintptr a4, uintptr a5, uintptr a6)
+syscall_result syscall6(int trap, uintptr a1, uintptr a2, uintptr a3, uintptr a4, uintptr a5, uintptr a6)
 {
 	syscall_result r;
 
@@ -70,14 +31,11 @@ syscall_result syscall6(int trap, uintptr a1, uintptr a2, uintptr a3,
 						 "cmpq	$-4095, %%rax\n\t"
 						 "jbe 	0f\n\t"
 						 "movq	$-1, %0\n\t"
+						 "neg %%rax\n\t"
 						 "movq	%%rax, %1\n\t"
 						 "jmp	1f\n\t"
-						 "0:\n\t"
-						 "movq	%%rax, %0\n\t"
-						 "movq 	$0, %1\n\t"
-						 "1:\n\t":"=m"(r.r1), "=m"(r.errno)
-						 :"a"(trap), "D"(a1), "S"(a2), "d"(a3), "m"(a4),
-						 "m"(a5), "m"(a6)
+						 "0:\n\t" "movq	%%rax, %0\n\t" "movq 	$0, %1\n\t" "1:\n\t":"=m"(r.r1), "=m"(r.errno)
+						 :"a"(trap), "D"(a1), "S"(a2), "d"(a3), "m"(a4), "m"(a5), "m"(a6)
 						 :"rcx", "r8", "r9", "r10", "r11");
 
 	return r;
@@ -99,33 +57,31 @@ syscall_result syscall3(int trap, uintptr a1, uintptr a2, uintptr a3)
 						 "cmpq	$-4095, %%rax\n\t"
 						 "jbe 	0f\n\t"
 						 "movq	$-1, %0\n\t"
+						 "neg	%%rax\n\t"
 						 "movq	%%rax, %1\n\t"
 						 "jmp	1f\n\t"
-						 "0:\n\t"
-						 "movq	%%rax, %0\n\t"
-						 "movq 	$0, %1\n\t"
-						 "1:\n\t":"=m"(r.r1), "=m"(r.errno)
+						 "0:\n\t" "movq	%%rax, %0\n\t" "movq 	$0, %1\n\t" "1:\n\t":"=m"(r.r1), "=m"(r.errno)
 						 :"a"(trap), "D"(a1), "S"(a2), "d"(a3)
 						 :"rcx");
 
 	return r;
 }
 
-static error *set_error(uintptr code)
+static const error *set_error(uintptr code)
 {
-	error *err;
+	const error *err;
 
 	if (code == 0)
 		return nil;
 
-	err = allocate(sizeof(error));
-
-	err->code = code;
-	err->msg = err_strings[-code];
+	if (code > num_errs)
+		err = &(syscall_errors[num_errs]);
+	else
+		err = &(syscall_errors[code]);
 	return err;
 }
 
-int64 sys_read(uint32 fd, char *buf, uint64 count, error ** err)
+int64 sys_read(uint32 fd, char *buf, uint64 count, const error ** err)
 {
 	syscall_result r = syscall3(s_read, fd, (uintptr) buf, count);
 	if (err != nil) {
@@ -134,7 +90,16 @@ int64 sys_read(uint32 fd, char *buf, uint64 count, error ** err)
 	return r.r1;
 }
 
-int64 sys_write(uint32 fd, const char *buf, uint64 count, error ** err)
+int64 sys_read_slice(uint32 fd, slice buf, const error ** err)
+{
+	syscall_result r = syscall3(s_read, fd, (uintptr) buf.base, buf.len);
+	if (err != nil) {
+		*err = set_error(r.errno);
+	}
+	return r.r1;
+}
+
+int64 sys_write(uint32 fd, const char *buf, uint64 count, const error ** err)
 {
 	syscall_result r = syscall3(s_write, fd, (uintptr) buf, count);
 	if (err != nil) {
@@ -143,7 +108,7 @@ int64 sys_write(uint32 fd, const char *buf, uint64 count, error ** err)
 	return r.r1;
 }
 
-error *sys_close(uint32 fd)
+const error *sys_close(uint32 fd)
 {
 	syscall_result r = syscall3(s_close, fd, 0, 0);
 	if (r.errno != 0) {
@@ -152,18 +117,16 @@ error *sys_close(uint32 fd)
 	return nil;
 }
 
-void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags,
-			   uintptr fd, uintptr offset, error ** err)
+void *sys_mmap(uintptr addr, uint64 len, uintptr prot, uintptr flags, uintptr fd, uintptr offset, const error ** err)
 {
-	syscall_result r =
-		syscall6(s_mmap, addr, len, prot, flags, fd, offset);
+	syscall_result r = syscall6(s_mmap, addr, len, prot, flags, fd, offset);
 	if (err != nil) {
 		*err = set_error(r.errno);
 	}
 	return (void *) r.r1;
 }
 
-error *sys_munmap(uintptr addr, uint64 len)
+const error *sys_munmap(uintptr addr, uint64 len)
 {
 	syscall_result r = syscall3(s_munmap, addr, len, 0);
 	if (r.errno != 0) {
@@ -177,17 +140,16 @@ void sys_exit(int error_code)
 	syscall3(s_exit, error_code, 0, 0);
 }
 
-error *sys_clock_gettime(int which_clock, struct timespec *tp)
+const error *sys_clock_gettime(int which_clock, struct timespec *tp)
 {
-	syscall_result r =
-		syscall3(s_clock_gettime, which_clock, (uintptr) tp, 0);
+	syscall_result r = syscall3(s_clock_gettime, which_clock, (uintptr) tp, 0);
 	if (r.errno != 0) {
 		return set_error(r.errno);
 	}
 	return nil;
 }
 
-int sys_socket(int family, int type, int protocol, error ** err)
+int sys_socket(int family, int type, int protocol, const error ** err)
 {
 	syscall_result r = syscall3(s_socket, family, type, protocol);
 	if (err != nil) {
@@ -196,7 +158,7 @@ int sys_socket(int family, int type, int protocol, error ** err)
 	return r.r1;
 }
 
-error *sys_bind(int sockfd, struct sockaddr * addr, int addrlen)
+const error *sys_bind(int sockfd, struct sockaddr *addr, int addrlen)
 {
 	syscall_result r = syscall3(s_bind, sockfd, (uintptr) addr, addrlen);
 	if (r.errno != 0) {
@@ -205,19 +167,17 @@ error *sys_bind(int sockfd, struct sockaddr * addr, int addrlen)
 	return nil;
 }
 
-error *sys_setsockopt(int sockfd, int level, int optname,
-					  const void *optval, int optlen)
+const error *sys_setsockopt(int sockfd, int level, int optname, const void *optval, int optlen)
 {
-	syscall_result r =
-		syscall6(s_setsockopt, sockfd, level, optname, (uintptr) optval,
-				 optlen, 0);
+	syscall_result r = syscall6(s_setsockopt, sockfd, level, optname, (uintptr) optval,
+								optlen, 0);
 	if (r.errno != 0) {
 		return set_error(r.errno);
 	}
 	return nil;
 }
 
-error *sys_listen(int sockfd, int qlen)
+const error *sys_listen(int sockfd, int qlen)
 {
 	syscall_result r = syscall3(s_listen, sockfd, qlen, 0);
 	if (r.errno != 0) {
@@ -226,30 +186,26 @@ error *sys_listen(int sockfd, int qlen)
 	return nil;
 }
 
-int sys_accept(int sockfd, struct sockaddr *addr, int *addrlen,
-			   error ** err)
+int sys_accept(int sockfd, struct sockaddr *addr, int *addrlen, const error ** err)
 {
-	syscall_result r =
-		syscall3(s_accept, sockfd, (uintptr) addr, (uintptr) addrlen);
+	syscall_result r = syscall3(s_accept, sockfd, (uintptr) addr, (uintptr) addrlen);
 	if (err != nil) {
 		*err = set_error(r.errno);
 	}
 	return r.r1;
 }
 
-int sys_accept4(int sockfd, struct sockaddr *addr, int *addrlen, int flags,
-				error ** err)
+int sys_accept4(int sockfd, struct sockaddr *addr, int *addrlen, int flags, const error ** err)
 {
-	syscall_result r =
-		syscall6(s_accept4, sockfd, (uintptr) addr, (uintptr) addrlen,
-				 flags, 0, 0);
+	syscall_result r = syscall6(s_accept4, sockfd, (uintptr) addr, (uintptr) addrlen,
+								flags, 0, 0);
 	if (err != nil) {
 		*err = set_error(r.errno);
 	}
 	return r.r1;
 }
 
-int sys_fork(error ** err)
+int sys_fork(const error ** err)
 {
 	syscall_result r = syscall3(s_fork, 0, 0, 0);
 	if (err != nil) {
@@ -258,40 +214,37 @@ int sys_fork(error ** err)
 	return r.r1;
 }
 
-error *sys_epoll_create(int size)
+int sys_epoll_create(int size, const error ** err)
 {
 	syscall_result r = syscall3(s_epoll_create, size, 0, 0);
-	if (r.errno != 0) {
-		return set_error(r.errno);
-	}
-	return nil;
-}
-
-error *sys_epoll_create1(int flags)
-{
-	syscall_result r = syscall3(s_epoll_create1, flags, 0, 0);
-	if (r.errno != 0) {
-		return set_error(r.errno);
-	}
-	return nil;
-}
-
-int sys_epoll_wait(int epfd, struct epoll_event *events, int maxevents,
-				   int timeout, error ** err)
-{
-	syscall_result r =
-		syscall6(s_epoll_wait, epfd, (uintptr) events, maxevents,
-				 timeout, 0, 0);
 	if (err != nil) {
 		*err = set_error(r.errno);
 	}
 	return r.r1;
 }
 
-error *sys_epoll_ctl(int epfd, int op, int fd, struct epoll_event * event)
+int sys_epoll_create1(int flags, const error ** err)
 {
-	syscall_result r =
-		syscall6(s_epoll_ctl, epfd, op, fd, (uintptr) event, 0, 0);
+	syscall_result r = syscall3(s_epoll_create1, flags, 0, 0);
+	if (err != nil) {
+		*err = set_error(r.errno);
+	}
+	return r.r1;
+}
+
+int sys_epoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout, const error ** err)
+{
+	syscall_result r = syscall6(s_epoll_wait, epfd, (uintptr) events, maxevents,
+								timeout, 0, 0);
+	if (err != nil) {
+		*err = set_error(r.errno);
+	}
+	return r.r1;
+}
+
+const error *sys_epoll_ctl(int epfd, int op, int fd, struct epoll_event *event)
+{
+	syscall_result r = syscall6(s_epoll_ctl, epfd, op, fd, (uintptr) event, 0, 0);
 	if (r.errno != 0) {
 		return set_error(r.errno);
 	}

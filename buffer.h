@@ -8,7 +8,7 @@ typedef struct circular_buffer {
 	uint64 tail;
 } circular_buffer;
 
-circular_buffer new_circular_buffer(uint64 size, error ** err);
+circular_buffer new_circular_buffer(uint64 size, const error ** err);
 void consume(circular_buffer * cb, uint64 n);
 void produce(circular_buffer * cb, uint64 n);
 slice remaining_slice(circular_buffer * cb);
