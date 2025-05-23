@@ -3,41 +3,14 @@
 PROJECT=tcp_server
 
 VERBOSITY=0
-# Don't use now.
-#VERBOSITYFLAGS=""
 
-while [ "$1" = "-v" ]; do
-	VERBOSITY=$((VERBOSITY+1))
-	# concatenate strings
-	#VERBOSITYFLAGS="$VERBOSITYFLAGS -v"
+if [ "$1" = "-v" ]; then
+	VERBOSITY=1
 	shift
-done
-
-# Don't use now.
-# run()
-# {
-# 	# "$@" - all argumetns (quotes preserve all spaces in arguments)
-# 	# if "$@" then prog -v "   -v" equals -v    -v
-# 	# if $@ then prog "   -v" equals -v -v
-# 	if [ $VERBOSITY -gt 1 ]; then
-# 		echo "$@";
-# 	fi
-
-# 	"$@" || exit 1
-# }
-
-# printv()
-# {
-# 	if [ $VERBOSITY -gt 0 ]; then
-# 		echo "$@";
-# 	fi
-# }
+fi
 
 run()
 {
-	# "$@" - all argumetns (quotes preserve all spaces in arguments).
-	# if "$@" then prog -v "   -v" equals -v    -v.
-	# if $@ then prog "   -v" equals -v -v.
 	if [ $VERBOSITY -gt 0 ]; then
 		echo "$@";
 	fi
@@ -45,9 +18,9 @@ run()
 	"$@" || exit 1
 }
 
-CFLAGS="-Wall -Wextra -Wpedantic -Werror -ansi -std=c89"
-LDFLAGS="-static -nostdlib"
+CFLAGS="-Wall -std=c99 -nostdlib -static"
 
+SRCT=`ls tests/*.c`
 SRC=`ls *.c`
 HED=`ls *.h`
 
@@ -76,16 +49,19 @@ case $1 in
 		;;
 	fmt)
 		if which indent > /dev/null; then
-			for file in $SRC; do
-				# -kr is Kernighan & Ritchie coding style, -ts4 is tabs.
-				run indent -kr -ts4 -l120 $file
-			done
-			for file in $HED; do
-				run indent -kr -ts4 -l120 $file
-			done
-			rm -f *.c~ *.h~
-		fi
-		;;
+            for file in $SRC; do
+                # -kr is Kernighan & Ritchie coding style, -ts4 is tabs.
+                run indent -kr -ts4 -l120 $file
+            done
+            for file in $HED; do
+                run indent -kr -ts4 -l120 $file
+            done
+            for file in $SRCT; do
+                run indent -kr -ts4 -l120 $file
+            done
+            rm -f *.c~ *.h~ tests/*.c~
+        fi
+        ;;
 	prof)
 		run cc -o $PROJECT -O2 -mavx2 -fno-omit-frame-pointer $CFLAGS $LDFLAGS $SRC
 		;;
@@ -105,11 +81,19 @@ case $1 in
 		fi
 			;;
 	test)
+			# SRCWMAIN=`echo $SRC | sed 's/main\.c//g'`
+			# for file in $SRCT; do
+                # run cc -o $file.out $CFLAGS $LDFLAGS $file $SRCWMAIN -lm
+                # ./$file.out
+                # rm -f $file.out
+                # echo "-----------------------------------------"
+            # done
+
 			if [ "$#" -gt 1 ]; then
 				if [ "$2" == "clean" ]; then
 					run rm -f ./tests/*.out
 				else
-					run cc -o ./tests/$2.out -O2 -mavx2 $CFLAGS $LDFLAGS ./tests/${2}.c $SRC
+					run cc -I . -o ./tests/$2.out -O2 -mavx2 $CFLAGS $LDFLAGS ./tests/${2}.c $SRC
 				fi
 			else
 				echo "Type a program name (<name_test> without .c) or clean for deleting *.out files"
